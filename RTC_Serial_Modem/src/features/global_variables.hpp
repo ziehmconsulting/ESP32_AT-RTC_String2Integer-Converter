@@ -5,23 +5,31 @@
 
 struct NetworkTime
 {
-    int networkhour;
-    int networkminute;
-    int networkseconds;
+    uint8_t networkhour;
+    uint8_t networkminute;
+    uint8_t networkseconds;
 };
 
 struct NetworkDate
 {
-    int networkyear;
-    int networkmonth;
-    int networkday;
+    uint8_t networkyear;
+    uint8_t networkmonth;
+    uint8_t networkday;
 };
 
-extern int NETWORK_HOUR;
-extern int NETWORK_MINUTE;
-extern int NETWORK_SECOND;
-extern int NETWORK_YEAR;
-extern int NETWORK_MONTH;
-extern int NETWORK_DAY;
+//default 42 see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_HOUR;
+//default 42 see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_MINUTE;
+//default 42 to see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_SECOND;
+//default 42 to see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_YEAR;
+//default 42 to see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_MONTH;
+//default 42 to see the first change. works for hour,month,day als logical indicator
+extern uint8_t NETWORK_DAY;
+
+extern bool NETWORK_TIME_GLOBAL;
 
 #endif

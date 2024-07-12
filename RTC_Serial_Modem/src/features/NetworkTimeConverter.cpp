@@ -41,7 +41,7 @@
 using namespace std;
 
 //Debug-Option
-bool print_Time = false; //print time generate in the function convertTime2Int
+bool print_Time = true; //print time generate in the function convertTime2Int
 bool print_global_Time = true;
 
 //using unint8_t or unsigned char instead of byte with namespace std
@@ -164,6 +164,7 @@ void writeTime_Date2glob_Variables(uint8_t hours, uint8_t minutes, uint8_t secon
   NETWORK_YEAR = year;
   NETWORK_MONTH = month;
   NETWORK_DAY = day;
+  NETWORK_TIME_GLOBAL = true;  // global trigger to interupt in the mainloop
 }
 
 //*********************************************************************************************
@@ -252,16 +253,20 @@ void printGlobalTime() {
   Serial.println("------------------------------------------");
 }
 
+
+bool getTime = true;
+
 //*********************************************************************************************
 // Main-function to read Network time from modem and make it avaible with global access  to store regular at rtc-module
 void getNetworkTime() {
-  if (millis() - currentMillis >= interval)  //This is done every second
+  //if (millis() - currentMillis >= interval)  //This is done every second
+  if (getTime)  //This is done every call aslong as getTime is true
   {
     Serial.println("***********************************");
     //works
-    //Serial1.println("AT+CCLK?");
+    Serial1.println("AT+CCLK?");
     //works
-    Serial1.println("AT+CCLK?\r\n");  // TODO: understand difference between both working commands
+    //Serial1.println("AT+CCLK?\r\n");  // TODO: understand difference between both working commands
     Serial.println("Sent Command: AT+CCLK?");
     Serial.println("***********************************");
     //printSerialTime();

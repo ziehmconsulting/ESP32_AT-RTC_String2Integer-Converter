@@ -45,6 +45,10 @@ TaskHandle_t Task1;
 #define GSM_RESET 19
 #define GSM_ENABLE 18
 
+bool setRTCTime = false;
+bool gotNetworkTime = false;
+u_int8_t iterations = 10;
+
 void setSerials()
 {
   Serial.begin(BAUD_RATE);
@@ -58,15 +62,18 @@ void setup()
   digitalWrite(GSM_RESET, HIGH);
   pinMode(GSM_ENABLE, OUTPUT);
   digitalWrite(GSM_ENABLE, HIGH); /* Turn ON output*/
+  delay(500);
   Serial.println("Serial configured");
+  delay(500);
   Serial1.print("ATE0"); // Disable echo !!! Important to avoide overhead of regular calcluation
   //! TODO: add feedback "if ok" function
   delay(500);
   Serial1.print("ATE0");
+  delay(3000);
   //! TODO: add  get time from network to RTC Module
   // Serial1.print("ATE0"); // Disable echo
-  delay(500);
-  //setupRTC();
+
+  setupRTC();
   delay(500);
   /*
   xTaskCreatePinnedToCore(
@@ -92,8 +99,36 @@ void setup()
   */
 }
 
+int counter = 0;
 void loop()
 {
-  getNetworkTime();
+  if (!gotNetworkTime)
+  {
+    for (;;)
+    {
+      getNetworkTime();
 
+      if (NETWORK_TIME_GLOBAL != false)
+      {
+        Serial.println("got time from Modem");
+        gotNetworkTime = true;
+        // goto label;
+        delay(1000);
+        break;
+      }
+    }
+  }
+
+  if (!setRTCTime)
+  {
+    adjustRTC_Time(NETWORK_HOUR, NETWORK_MINUTE, NETWORK_SECOND, NETWORK_YEAR, NETWORK_MONTH, NETWORK_DAY);
+    setRTCTime = true;
+  }
+
+  if (setRTCTime != false && gotNetworkTime != false)
+  {
+    delay(100);
+    getTimeRTC();
+    delay(1000);
+  }
 }

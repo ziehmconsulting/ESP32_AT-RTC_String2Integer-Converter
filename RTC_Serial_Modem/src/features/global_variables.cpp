@@ -10,9 +10,10 @@ int NetworkDate::networkmonth;
 int NetworkDate::networkday;
 */
 
-int NETWORK_HOUR = 0;
-int NETWORK_MINUTE= 0;
-int NETWORK_SECOND= 0;
-int NETWORK_YEAR= 0;
-int NETWORK_MONTH= 0;
-int NETWORK_DAY= 0;
+uint8_t NETWORK_HOUR = 42;
+uint8_t NETWORK_MINUTE = 42;
+uint8_t NETWORK_SECOND = 42;
+uint8_t NETWORK_YEAR = 42;
+uint8_t NETWORK_MONTH = 42;
+uint8_t NETWORK_DAY = 42;
+bool NETWORK_TIME_GLOBAL = false;
