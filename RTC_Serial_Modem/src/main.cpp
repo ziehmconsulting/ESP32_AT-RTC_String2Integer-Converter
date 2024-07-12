@@ -1,6 +1,6 @@
 /*H********************************************************************************************
 ** FILENAME :        main.cpp
-** Version  :        1.0.1
+** Version  :        2.0.0
 ** DESCRIPTION :
 **       Converter from Networktime as a String to integer
 **
@@ -24,7 +24,7 @@
 **            v.0.0.1 add and test functions to read&seperate the char elements in array Networktime
 **            v.1.0.0 add the converter and the concationation function to get as result integers
 **            v.1.1.0 seperate the code to implementable feature -> convertNetworkTime2Integer(); from #include "NetworkTimeConverter.hpp"
-**
+**            v.2.0.0 add configuration feauter for DS3231 RTC (SCL:GPIO22; SDA:GPIO21)
 *********************************************************************************************H*/
 #include <Arduino.h>
 #include <iostream> // std::cout
@@ -35,6 +35,8 @@
 
 using namespace std;
 
+TaskHandle_t Task0;
+TaskHandle_t Task1;
 /**********************************************************************************************************************************/
 // Modem Serial Pins
 #define RX_PIN 4       // ESP32 RX pin
@@ -56,12 +58,42 @@ void setup()
   digitalWrite(GSM_RESET, HIGH);
   pinMode(GSM_ENABLE, OUTPUT);
   digitalWrite(GSM_ENABLE, HIGH); /* Turn ON output*/
-  Serial1.print("ATE0\r");        // Disable echo
+  Serial.println("Serial configured");
+  Serial1.print("ATE0"); // Disable echo !!! Important to avoide overhead of regular calcluation
+  //! TODO: add feedback "if ok" function
+  delay(500);
+  Serial1.print("ATE0");
+  //! TODO: add  get time from network to RTC Module
   // Serial1.print("ATE0"); // Disable echo
+  delay(500);
+  //setupRTC();
+  delay(500);
+  /*
+  xTaskCreatePinnedToCore(
+      showNetworkTimeTask,       // Function that should be called
+      "show time from variable", // Name of the task (for debugging)
+      2048,                      // Stack size (bytes)
+      NULL,                      // Parameter to pass
+      1,                         // Task priority
+      &Task0,                    // Task handle
+      0                          // run on Core 1
+  );
+
+  xTaskCreatePinnedToCore(
+      getNetworkTimeTask,      // Function that should be called
+      "get time from Network", // Name of the task (for debugging)
+      2048,                    // Stack size (bytes)
+      NULL,                    // Parameter to pass
+      1,                       // Task priority
+      &Task1,                  // Task handle
+      1                        // run on Core 1
+  );
+  delay(500);
+  */
 }
 
 void loop()
 {
-  convertNetworkTime2Integer();
-  Serial.println(NETWORK_SECOND);
+  getNetworkTime();
+
 }

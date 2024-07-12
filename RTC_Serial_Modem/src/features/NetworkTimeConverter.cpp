@@ -6,11 +6,13 @@
 **       (not implemented yet) Writing integers to global Varibles
 **
 ** PUBLIC FUNCTIONS :
-**       int    concat()
-**       void   convertNetworkTime2Integer()
-**       void   setSerials()
-**       void   setupNT-Converter()
-**       int    convertNT2Integer()
+**      int concatinateTime(int a, int b)
+**      void printSerialTime()
+**      void printArrayTime()
+**      void writeTime_Date2glob_Variables(int hours, int minutes, int seconds, int year, int month, int day)
+**      void convertTime2Int()
+**      void printGlobalTime()
+**      void getNetworkTime()  -> Main Function
 **
 ** NOTES :
 **      The naming of the prefixes of the variables and functions results from the variable type or
@@ -29,247 +31,301 @@
 **
 *********************************************************************************************H*/
 #include <Arduino.h>
-#include <iostream> // std::cout
-#include <string>   // std::string, std::stoi
-#include "features/global_variables.hpp"
+#include <iostream>  // std::cout
+#include <string>    // std::string, std::stoi
+#include "NetworkTimeConverter.hpp"
+#include "global_variables.hpp"
 
 using namespace std;
-
+bool print_Time = false; //print time generate in the function convertTime2Int
+bool print_global_Time = true;
 const long interval = 1000;
 static long currentMillis;
 
-int searchcharpos = 0; // To determine where is the + in +CCLK in the char array
+//using unint8_t or unsigned char instead of byte with namespace std
+//byte searchcharpos = 0;  //To determine where is the + in +CCLK in the char array
+uint8_t searchcharpos = 0;  //To determine where is the + in +CCLK in the char array
 
-char serialdata[256]; // Array to store the chars before parsing
+char serialdata[256];  //Array to store the chars before parsing
 
-char rtcy1[3];  // Current year  Format: yy\0
-char rtcm1[3];  // Current month  Format: mm\0
-char rtcd1[3];  // Current day  Format: dd\0
-char rtch1[3];  // Current hour  Format: hh\0char rtcmm1[3];
-char rtcmm1[3]; // Current minute  Format: mm\0
-char rtcs1[3];  // Current second  Format: ss\0
-char rtc_tz[3]; // time zone (indicates the difference, expressed in quarters of an hour, between the local time and GMT;In an range of -96 ~ +96). +8 TZ = +2 hours
 
-int pointingfinger = 0; // index of the array
-char enabledtime = 0;   // this variable is set to 1 every second and set to 0 after parsing is done
-char readenable = 0;    // this is set to 1 when is finished reading from serial
-char foundchar[6];      // small buffer that works as a shift register to hold only the command for comparison
+char array_year[3];//Current year  Format: yy\0
+char array_month[3];   //Current month  Format: mm\0
+char array_day[3];   //Current day  Format: dd\0
+char array_hour[3];   //Current hour  Format: hh\0
+char array_minute[3];  //Current minute  Format: mm\0
+char array_second[3];   //Current second  Format: ss\0
+char rtc_tz[3];  // time zone (indicates the difference, expressed in quarters of an hour, between the local time and GMT;In an range of -96 ~ +96). +8 TZ = +2 hours
 
-int concat(int a, int b)
-{
-    // Convert both the integers to string
-    string s1 = to_string(a);
-    string s2 = to_string(b);
 
-    // Concatenate both strings
-    string s = s1 + s2;
 
-    // Convert the concatenated string
-    // to integer
-    int c = stoi(s);
+//byte pointingfinger = 0;  //index of the array
+uint8_t pointingfinger = 0;  //index of the array
 
-    // return the formed integer
-    return c;
+char enabledtime = 0;  //this variable is set to 1 every second and set to 0 after parsing is done
+
+char ready2read = 0;  //this is set to 1 when is finished reading from serial
+
+char foundchar[6];  //small buffer that works as a shift register to hold only the command for comparison
+
+int concatinateTime(int a, int b) {
+  // Convert both the integers to string
+  string s1 = to_string(a);
+  string s2 = to_string(b);
+
+  // Concatenate both strings
+  string s = s1 + s2;
+
+  // Convert the concatenated string
+  // to integer
+  int c = stoi(s);
+
+  // return the formed integer
+  return c;
 }
 
-void writeTime_Date2glob_Variables(int hours,int minutes,int seconds,int year,int month,int day)
-{
-    NETWORK_HOUR = hours;
-    NETWORK_MINUTE = minutes;
-    NETWORK_SECOND = seconds;
-    NETWORK_YEAR = year;
-    NETWORK_MONTH = month;
-    NETWORK_DAY = day;
+//print the actual stored Serial Data
+// her till to position 0-26 ( is related to the original output of the modem)
+//may differ from the modem depending on the model
+void printSerialTime() {
+  Serial.println("Print serialdata:");
+  Serial.print(serialdata[searchcharpos]);
+  Serial.print(serialdata[searchcharpos + 1]);
+  Serial.print(serialdata[searchcharpos + 2]);
+  Serial.print(serialdata[searchcharpos + 3]);
+  Serial.print(serialdata[searchcharpos + 4]);
+  Serial.print(serialdata[searchcharpos + 5]);
+  Serial.print(serialdata[searchcharpos + 6]);
+  Serial.print(serialdata[searchcharpos + 7]);
+  Serial.print(serialdata[searchcharpos + 8]);
+  Serial.print(serialdata[searchcharpos + 9]);
+  Serial.print(serialdata[searchcharpos + 10]);
+  Serial.print(serialdata[searchcharpos + 11]);
+  Serial.print(serialdata[searchcharpos + 12]);
+  Serial.print(serialdata[searchcharpos + 13]);
+  Serial.print(serialdata[searchcharpos + 14]);
+  Serial.print(serialdata[searchcharpos + 15]);
+  Serial.print(serialdata[searchcharpos + 16]);
+  Serial.print(serialdata[searchcharpos + 17]);
+  Serial.print(serialdata[searchcharpos + 18]);
+  Serial.print(serialdata[searchcharpos + 19]);
+  Serial.print(serialdata[searchcharpos + 20]);
+  Serial.print(serialdata[searchcharpos + 21]);
+  Serial.print(serialdata[searchcharpos + 22]);
+  Serial.print(serialdata[searchcharpos + 23]);
+  Serial.print(serialdata[searchcharpos + 24]);
+  Serial.print(serialdata[searchcharpos + 25]);
+  Serial.print(serialdata[searchcharpos + 26]);
+  //Serial.print(serialdata[searchcharpos + 27]);
+  //Serial.print(serialdata[searchcharpos + 28]);
+  //Serial.print(serialdata[searchcharpos + 29]);
+  //Serial.print(serialdata[searchcharpos + 30]);
+  Serial.println("");
+  Serial.println("==============================================");
+  //Serial1.print("AT+CCLK?\r"); //ask for the time
+  //delay(50);
 }
 
-void convertNetworkTime2Integer()
-{
-    // int hours,minutes,seconds;
+void printArrayTime() {
+  Serial.println("YEAR: ");
+  Serial.print(array_year[0]);
+  Serial.println(array_year[1]);
+  Serial.println("MONTH: ");
+  Serial.print(array_month[0]);
+  Serial.println(array_month[1]);
+  Serial.println("DAY: ");
+  Serial.print(array_day[0]);
+  Serial.println(array_day[1]);
+  Serial.println("HOUR: ");
+  Serial.print(array_hour[0]);
+  Serial.println(array_hour[1]);
+  Serial.println("MINUTE: ");
+  Serial.print(array_minute[0]);
+  Serial.println(array_minute[1]);
+  Serial.println("SECOND: ");
+  Serial.print(array_second[0]);
+  Serial.println(array_second[1]);
+}
 
-    if (millis() - currentMillis >= interval) // This is done every second
-    {
-        Serial.println("***********************************");
-        Serial1.print("AT+CCLK?\r"); // ask for the time
-        // result
-        delay(50);
-        // Serial1.println("AT+CCLK?");
-        // Serial.println("AT+CCLK?");
-        // Serial.println("Printing Serial-Data Information");
+void writeTime_Date2glob_Variables(int hours, int minutes, int seconds, int year, int month, int day) {
+  NETWORK_HOUR = hours;
+  NETWORK_MINUTE = minutes;
+  NETWORK_SECOND = seconds;
+  NETWORK_YEAR = year;
+  NETWORK_MONTH = month;
+  NETWORK_DAY = day;
+}
 
-        /*
-        int SerialDataPositions = 26;
-        for (int i = 0; i <= SerialDataPositions; i++)
-        {
-            Serial.print(serialdata[i]);
-        }
-        */
-        // Serial.println("");
-        /*
-        //-----------------------
-        Serial.println("YEAR: ");
-        Serial.print(rtcy1[0]);
-        Serial.println(rtcy1[1]);
-        //-----------------------
-        Serial.println("MONTH: ");
-        Serial.print(rtcm1[0]);
-        Serial.println(rtcm1[1]);
-        //-----------------------
-        Serial.println("DAY: ");
-        Serial.print(rtcd1[0]);
-        Serial.println(rtcd1[1]);
-        //-----------------------
-        Serial.println("HOUR: ");
-        Serial.print(rtch1[0]);
-        Serial.println(rtch1[1]);
-        //-----------------------
-        Serial.println("MINUTE: ");
-        Serial.print(rtcmm1[0]);
-        Serial.println(rtcmm1[1]);
-        //-----------------------
-        Serial.println("SECOND: ");
-        Serial.print(rtcs1[0]);
-        Serial.println(rtcs1[1]);
-        //------time zone--------
-        Serial.println("TimeZone: ");
-        Serial.print(rtc_tz[0]);
-        Serial.println(rtc_tz[1]);
-        */
-        //------Time Shift--------
-        //Serial.println("TimeShift:");
-        char timezone_part1 = rtc_tz[0];
-        int i_timezone_part1 = (int)timezone_part1 - 48;
-        char timezone_part2 = rtc_tz[1];
-        int i_timezone_part2 = (int)timezone_part2 - 48;
-        int concatinatedTimeZone = concat(i_timezone_part1, i_timezone_part2); //! find more precisly name for result
-        int hours2add = concatinatedTimeZone / 4;                              // has to be divided by 4 to find difference  between the local time and GMT
-        //Serial.println(hours2add);
+void convertTime2Int() {
+  //------Time Shift--------
+  //Serial.println("TimeShift:");
+  char timezone_part1 = rtc_tz[0];
+  int i_timezone_part1 = (int)timezone_part1 - 48;
+  char timezone_part2 = rtc_tz[1];
+  int i_timezone_part2 = (int)timezone_part2 - 48;
+  int concatinatedTimeZone = concatinateTime(i_timezone_part1, i_timezone_part2);  //! find more precisly name for result
+  int hours2add = concatinatedTimeZone / 4;                                        // has to be divided by 4 to find difference  between the local time and GMT
+  //Serial.println(hours2add);
 
-        // create integer representing the hours from char rtc_tz[]
-        char hours_part1 = rtch1[0];
-        char hours_part2 = rtch1[1];
-        int i_hours_part1 = (int)hours_part1 - 48;
-        int i_hours_part2 = (int)hours_part2 - 48;
-        int i_concatinated_hours = concat(i_hours_part1, i_hours_part2);
-        int actual_local_hours = i_concatinated_hours + hours2add;
+  // create integer representing the hours from char rtc_tz[]
+  char hours_part1 = array_hour[0];
+  char hours_part2 = array_hour[1];
+  int i_hours_part1 = (int)hours_part1 - 48;
+  int i_hours_part2 = (int)hours_part2 - 48;
+  int i_concatinated_hours = concatinateTime(i_hours_part1, i_hours_part2);
+  int actual_local_hours = i_concatinated_hours + hours2add;
 
-        //-----------------------
-        char minutes_part1 = rtcmm1[0];
-        char minutes_part2 = rtcmm1[1];
-        int i_minutes_part1 = (int)minutes_part1 - 48;
-        int i_minutes_part2 = (int)minutes_part2 - 48;
-        int i_concatinated_minutes = concat(i_minutes_part1, i_minutes_part2);
-        int actual_local_minutes = i_concatinated_minutes;
+  //-----------------------
+  char minutes_part1 = array_minute[0];
+  char minutes_part2 = array_minute[1];
+  int i_minutes_part1 = (int)minutes_part1 - 48;
+  int i_minutes_part2 = (int)minutes_part2 - 48;
+  int i_concatinated_minutes = concatinateTime(i_minutes_part1, i_minutes_part2);
+  int actual_local_minutes = i_concatinated_minutes;
 
-        //-----------------------
-        char seconds_part1 = rtcs1[0];
-        char seconds_part2 = rtcs1[1];
-        int i_seconds_part1 = (int)seconds_part1 - 48;
-        int i_seconds_part2 = (int)seconds_part2 - 48;
-        int i_concatinated_seconds = concat(i_seconds_part1, i_seconds_part2);
-        int actual_local_seconds = i_concatinated_seconds;
+  //-----------------------
+  char seconds_part1 = array_second[0];
+  char seconds_part2 = array_second[1];
+  int i_seconds_part1 = (int)seconds_part1 - 48;
+  int i_seconds_part2 = (int)seconds_part2 - 48;
+  int i_concatinated_seconds = concatinateTime(i_seconds_part1, i_seconds_part2);
+  int actual_local_seconds = i_concatinated_seconds;
 
-        //-----------------------
-        char year_part1 = rtcy1[0];
-        char year_part2 = rtcy1[1];
-        int i_year_part1 = (int)year_part1 - 48;
-        int i_year_part2 = (int)year_part2 - 48;
-        int i_concatinated_year = concat(i_year_part1, i_year_part2);
-        int actual_local_year = i_concatinated_year;
+  //-----------------------
+  char year_part1 = array_year[0];
+  char year_part2 = array_year[1];
+  int i_year_part1 = (int)year_part1 - 48;
+  int i_year_part2 = (int)year_part2 - 48;
+  int i_concatinated_year = concatinateTime(i_year_part1, i_year_part2);
+  int actual_local_year = i_concatinated_year;
 
-        //-----------------------
-        char month_part1 = rtcm1[0];
-        char month_part2 = rtcm1[1];
-        int i_month_part1 = (int)month_part1 - 48;
-        int i_month_part2 = (int)month_part2 - 48;
-        int i_concatinated_month = concat(i_month_part1, i_month_part2);
-        int actual_local_month = i_concatinated_month;
+  //-----------------------
+  char month_part1 = array_month[0];
+  char month_part2 = array_month[1];
+  int i_month_part1 = (int)month_part1 - 48;
+  int i_month_part2 = (int)month_part2 - 48;
+  int i_concatinated_month = concatinateTime(i_month_part1, i_month_part2);
+  int actual_local_month = i_concatinated_month;
 
-        //-----------------------
-        char day_part1 = rtcd1[0];
-        char day_part2 = rtcd1[1];
-        int i_day_part1 = (int)day_part1 - 48;
-        int i_day_part2 = (int)day_part2 - 48;
-        int i_concatinated_day = concat(i_day_part1, i_day_part2);
-        int actual_local_day = i_concatinated_day;
+  //-----------------------
+  char day_part1 = array_day[0];
+  char day_part2 = array_day[1];
+  int i_day_part1 = (int)day_part1 - 48;
+  int i_day_part2 = (int)day_part2 - 48;
+  int i_concatinated_day = concatinateTime(i_day_part1, i_day_part2);
+  int actual_local_day = i_concatinated_day;
 
-        Serial.printf("Local Time: %d:%d:%d", actual_local_hours, actual_local_minutes, actual_local_seconds);
-        Serial.println("");
-        Serial.printf("Local Date: %d:%d:%d", actual_local_year, actual_local_month, actual_local_day);
-        Serial.println("");
-        enabledtime = 1;
-        currentMillis = millis();
-        //void writeTime_Date2glob_Variables(int hours,int minutes,int seconds,int year,int month,int day)
-        writeTime_Date2glob_Variables(actual_local_hours, actual_local_minutes, actual_local_seconds,actual_local_year, actual_local_month, actual_local_day);
-    }
+  writeTime_Date2glob_Variables(actual_local_hours, actual_local_minutes, actual_local_seconds, actual_local_year, actual_local_month, actual_local_day);
 
-    if (enabledtime == 1)
-    {
-        if (Serial1.available() > 0)
-        {
+  if (print_Time == true) {
+    Serial.println("***************************************************************");
+    Serial.printf("Local Time: %d:%d:%d", actual_local_hours, actual_local_minutes, actual_local_seconds);
+    Serial.println("");
+    Serial.printf("Local Date: %d:%d:%d", actual_local_year, actual_local_month, actual_local_day);
+    Serial.println("");
+    Serial.println("***************************************************************");
+  }
+}
+
+void printGlobalTime() {
+  Serial.println("------------------------------------------");
+  Serial.printf("Year: %d\r\n", NETWORK_YEAR);
+  Serial.printf("MONTH: %d\r\n", NETWORK_MONTH);
+  Serial.printf("DAY: %d\r\n", NETWORK_DAY);
+  Serial.printf("Hour: %d\r\n", NETWORK_HOUR);
+  Serial.printf("Minutes: %d\r\n", NETWORK_MINUTE);
+  Serial.printf("Seconds: %d\r\n", NETWORK_SECOND);
+  Serial.println("------------------------------------------");
+}
+
+void getNetworkTime() {
+  if (millis() - currentMillis >= interval)  //This is done every second
+  {
+    Serial.println("***********************************");
+    //works
+    //Serial1.println("AT+CCLK?");
+    //works
+    Serial1.println("AT+CCLK?\r\n");  // TODO: understand difference between both working commands
+    Serial.println("Sent Command: AT+CCLK?");
+    Serial.println("***********************************");
+    //printSerialTime();
+    //Serial.println("Millis: ");
+    //Serial.println(millis());
+    //Serial.println("***********************************");
+    //printArrayTime();
+    enabledtime = 1;
+    currentMillis = millis();
+  }
+
+  if (enabledtime == 1) {
+    if (Serial1.available() > 0) {
+      foundchar[0] = foundchar[1];
+      foundchar[1] = foundchar[2];
+      foundchar[2] = foundchar[3];
+      foundchar[3] = foundchar[4];
+      foundchar[4] = foundchar[5];
+      foundchar[5] = Serial1.read();
+
+      if (foundchar[0] == '+' && foundchar[1] == 'C' && foundchar[2] == 'C' && foundchar[3] == 'L' && foundchar[4] == 'K' && foundchar[5] == ':') {
+        ready2read = 1;
+        pointingfinger = 0;
+      }
+      if (ready2read == 1) {
+        while (foundchar[0] != '\n') {
+          if (Serial1.available() > 0) {
+            serialdata[pointingfinger] = foundchar[0];
+            serialdata[pointingfinger + 1] = 0;
+            pointingfinger++;
             foundchar[0] = foundchar[1];
             foundchar[1] = foundchar[2];
             foundchar[2] = foundchar[3];
             foundchar[3] = foundchar[4];
             foundchar[4] = foundchar[5];
-
             foundchar[5] = Serial1.read();
-
-            if (foundchar[0] == '+' && foundchar[1] == 'C' && foundchar[2] == 'C' && foundchar[3] == 'L' && foundchar[4] == 'K' && foundchar[5] == ':')
-            {
-                readenable = 1;
-                pointingfinger = 0;
-            }
-
-            if (readenable == 1)
-            {
-                while (foundchar[0] != '\n')
-                {
-                    if (Serial1.available() > 0)
-                    {
-                        serialdata[pointingfinger] = foundchar[0];
-                        serialdata[pointingfinger + 1] = 0;
-                        pointingfinger++;
-                        foundchar[0] = foundchar[1];
-                        foundchar[1] = foundchar[2];
-                        foundchar[2] = foundchar[3];
-                        foundchar[3] = foundchar[4];
-                        foundchar[4] = foundchar[5];
-                        foundchar[5] = Serial1.read();
-                    }
-                }
-                readenable = 0;
-                // pointingfinger = 0;
-                enabledtime = 0;
-                rtcy1[0] = serialdata[searchcharpos + 6]; // getting first char with its offset
-                rtcy1[1] = serialdata[searchcharpos + 7];
-                rtcy1[2] = '\0';
-                delay(100);
-                rtcm1[0] = serialdata[searchcharpos + 9];
-                rtcm1[1] = serialdata[searchcharpos + 10];
-                rtcm1[2] = '\0';
-                delay(100);
-                rtcd1[0] = serialdata[searchcharpos + 12];
-                rtcd1[1] = serialdata[searchcharpos + 13];
-                rtcd1[2] = '\0';
-                delay(100);
-                rtch1[0] = serialdata[searchcharpos + 15];
-                rtch1[1] = serialdata[searchcharpos + 16];
-                rtch1[2] = '\0';
-                delay(100);
-                rtcmm1[0] = serialdata[searchcharpos + 18];
-                rtcmm1[1] = serialdata[searchcharpos + 19];
-                rtcmm1[2] = '\0';
-                delay(100);
-                rtcs1[0] = serialdata[searchcharpos + 21];
-                rtcs1[1] = serialdata[searchcharpos + 22];
-                rtcs1[2] = '\0';
-                delay(100);
-                rtc_tz[0] = serialdata[searchcharpos + 24];
-                rtc_tz[1] = serialdata[searchcharpos + 25];
-                rtc_tz[2] = '\0';
-                delay(100);
-            }
+          }
         }
+        ready2read = 0;
+        //pointingfinger = 0;
+        enabledtime = 0;
+        //variable x may differ from the modem depending on the modeland output $serialdata[searchcharpos + x]
+        //add new Serial Data to Array for the year
+        array_year[0] = serialdata[searchcharpos + 6];  // getting first char with its offset
+        array_year[1] = serialdata[searchcharpos + 7];
+        array_year[2] = '\0';
+        //add new Serial Data to Array for the month
+        array_month[0] = serialdata[searchcharpos + 9];
+        array_month[1] = serialdata[searchcharpos + 10];
+        array_month[2] = '\0';
+        //add new Serial Data to Array for the day
+        array_day[0] = serialdata[searchcharpos + 12];
+        array_day[1] = serialdata[searchcharpos + 13];
+        array_day[2] = '\0';
+        //add new Serial Data to Array for the hours
+        array_hour[0] = serialdata[searchcharpos + 15];
+        array_hour[1] = serialdata[searchcharpos + 16];
+        array_hour[2] = '\0';
+        //add new Serial Data to Array for the minutes
+        array_minute[0] = serialdata[searchcharpos + 18];
+        array_minute[1] = serialdata[searchcharpos + 19];
+        array_minute[2] = '\0';
+        //add new Serial Data to Array for the seconds
+        array_second[0] = serialdata[searchcharpos + 21];
+        array_second[1] = serialdata[searchcharpos + 22];
+        array_second[2] = '\0';
+        //delay(100);
+        //add new Serial Data to Array for the time zone
+        rtc_tz[0] = serialdata[searchcharpos + 24];
+        rtc_tz[1] = serialdata[searchcharpos + 25];
+        rtc_tz[2] = '\0';
+        //print the latest time ( Function for testing purpuse to get the char output)
+        //printSerialTime();
+        //printArrayTime();
+        convertTime2Int();
+        //delay(200);
+        if (print_global_Time == true){
+          printGlobalTime();
+        }
+      }
     }
-    // return(hours);
-};
+  }
+}
