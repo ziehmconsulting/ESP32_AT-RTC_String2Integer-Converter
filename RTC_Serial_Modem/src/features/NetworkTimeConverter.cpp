@@ -6,12 +6,14 @@
 **       (not implemented yet) Writing integers to global Varibles
 **
 ** PUBLIC FUNCTIONS :
-**      int concatinateTime(int a, int b)
-**      void printSerialTime()
+**      uint8_t concatinateTime(uint8_t a, uint8_t b)
+**      void printSerialTime()  -> Debug option
+**          Debug_Option:     bool print_Time = false; //print time generate in the function convertTime2Int
 **      void printArrayTime()
-**      void writeTime_Date2glob_Variables(int hours, int minutes, int seconds, int year, int month, int day)
-**      void convertTime2Int()
+**      void writeTime_Date2glob_Variables(uint8_t hours, uint8_t minutes, uint8_t seconds, uint8_t year, uint8_t month, uint8_t day)
 **      void printGlobalTime()
+**        Debug_Option: bool print_global_Time = true;
+**      void convertTime2Int()
 **      void getNetworkTime()  -> Main Function
 **
 ** NOTES :
@@ -28,7 +30,7 @@
 **            v.0.0.1 add and test functions to read&seperate the char elements in array Networktime
 **            v.1.0.0 add the converter and the concationation function to get as result integers
 **            v.1.1.0 seperate the code to implementable feature -> convertNetworkTime2Integer(); from #include "NetworkTimeConverter.hpp"
-**
+**            v.1.x.y ....
 *********************************************************************************************H*/
 #include <Arduino.h>
 #include <iostream>  // std::cout
@@ -37,18 +39,16 @@
 #include "global_variables.hpp"
 
 using namespace std;
+
+//Debug-Option
 bool print_Time = false; //print time generate in the function convertTime2Int
 bool print_global_Time = true;
-const long interval = 1000;
-static long currentMillis;
 
 //using unint8_t or unsigned char instead of byte with namespace std
 //byte searchcharpos = 0;  //To determine where is the + in +CCLK in the char array
 uint8_t searchcharpos = 0;  //To determine where is the + in +CCLK in the char array
 
 char serialdata[256];  //Array to store the chars before parsing
-
-
 char array_year[3];//Current year  Format: yy\0
 char array_month[3];   //Current month  Format: mm\0
 char array_day[3];   //Current day  Format: dd\0
@@ -56,7 +56,6 @@ char array_hour[3];   //Current hour  Format: hh\0
 char array_minute[3];  //Current minute  Format: mm\0
 char array_second[3];   //Current second  Format: ss\0
 char rtc_tz[3];  // time zone (indicates the difference, expressed in quarters of an hour, between the local time and GMT;In an range of -96 ~ +96). +8 TZ = +2 hours
-
 
 
 //byte pointingfinger = 0;  //index of the array
@@ -68,7 +67,11 @@ char ready2read = 0;  //this is set to 1 when is finished reading from serial
 
 char foundchar[6];  //small buffer that works as a shift register to hold only the command for comparison
 
-int concatinateTime(int a, int b) {
+const long interval = 1000;
+static long currentMillis;
+
+//*********************************************************************************************
+uint8_t concatinateTime(uint8_t a, uint8_t b) {
   // Convert both the integers to string
   string s1 = to_string(a);
   string s2 = to_string(b);
@@ -78,12 +81,14 @@ int concatinateTime(int a, int b) {
 
   // Convert the concatenated string
   // to integer
-  int c = stoi(s);
+  uint8_t c = stoi(s);
 
   // return the formed integer
   return c;
 }
 
+//*********************************************************************************************
+//Debug-Feature
 //print the actual stored Serial Data
 // her till to position 0-26 ( is related to the original output of the modem)
 //may differ from the modem depending on the model
@@ -126,6 +131,8 @@ void printSerialTime() {
   //delay(50);
 }
 
+//*********************************************************************************************
+//DEbug-Feature
 void printArrayTime() {
   Serial.println("YEAR: ");
   Serial.print(array_year[0]);
@@ -147,7 +154,10 @@ void printArrayTime() {
   Serial.println(array_second[1]);
 }
 
-void writeTime_Date2glob_Variables(int hours, int minutes, int seconds, int year, int month, int day) {
+//*********************************************************************************************
+// Store converted result as integer to global variables
+// used in function void convertTime2Int()
+void writeTime_Date2glob_Variables(uint8_t hours, uint8_t minutes, uint8_t seconds, uint8_t year, uint8_t month, uint8_t day) {
   NETWORK_HOUR = hours;
   NETWORK_MINUTE = minutes;
   NETWORK_SECOND = seconds;
@@ -156,64 +166,66 @@ void writeTime_Date2glob_Variables(int hours, int minutes, int seconds, int year
   NETWORK_DAY = day;
 }
 
+//*********************************************************************************************
+//Converting time from array to char to integer
 void convertTime2Int() {
   //------Time Shift--------
   //Serial.println("TimeShift:");
   char timezone_part1 = rtc_tz[0];
-  int i_timezone_part1 = (int)timezone_part1 - 48;
   char timezone_part2 = rtc_tz[1];
-  int i_timezone_part2 = (int)timezone_part2 - 48;
-  int concatinatedTimeZone = concatinateTime(i_timezone_part1, i_timezone_part2);  //! find more precisly name for result
-  int hours2add = concatinatedTimeZone / 4;                                        // has to be divided by 4 to find difference  between the local time and GMT
+  uint8_t i_timezone_part1 = (uint8_t)timezone_part1 - 48;
+  uint8_t i_timezone_part2 = (uint8_t)timezone_part2 - 48;
+  uint8_t concatinatedTimeZone = concatinateTime(i_timezone_part1, i_timezone_part2);  //! find more precisly name for result
+  uint8_t hours2add = concatinatedTimeZone / 4;                                        // has to be divided by 4 to find difference  between the local time and GMT
   //Serial.println(hours2add);
 
   // create integer representing the hours from char rtc_tz[]
   char hours_part1 = array_hour[0];
   char hours_part2 = array_hour[1];
-  int i_hours_part1 = (int)hours_part1 - 48;
-  int i_hours_part2 = (int)hours_part2 - 48;
-  int i_concatinated_hours = concatinateTime(i_hours_part1, i_hours_part2);
-  int actual_local_hours = i_concatinated_hours + hours2add;
+  uint8_t i_hours_part1 = (uint8_t)hours_part1 - 48;
+  uint8_t i_hours_part2 = (uint8_t)hours_part2 - 48;
+  uint8_t i_concatinated_hours = concatinateTime(i_hours_part1, i_hours_part2);
+  uint8_t actual_local_hours = i_concatinated_hours + hours2add;
 
   //-----------------------
   char minutes_part1 = array_minute[0];
   char minutes_part2 = array_minute[1];
-  int i_minutes_part1 = (int)minutes_part1 - 48;
-  int i_minutes_part2 = (int)minutes_part2 - 48;
-  int i_concatinated_minutes = concatinateTime(i_minutes_part1, i_minutes_part2);
-  int actual_local_minutes = i_concatinated_minutes;
+  uint8_t i_minutes_part1 = (uint8_t)minutes_part1 - 48;
+  uint8_t i_minutes_part2 = (uint8_t)minutes_part2 - 48;
+  uint8_t i_concatinated_minutes = concatinateTime(i_minutes_part1, i_minutes_part2);
+  uint8_t actual_local_minutes = i_concatinated_minutes;
 
   //-----------------------
   char seconds_part1 = array_second[0];
   char seconds_part2 = array_second[1];
-  int i_seconds_part1 = (int)seconds_part1 - 48;
-  int i_seconds_part2 = (int)seconds_part2 - 48;
-  int i_concatinated_seconds = concatinateTime(i_seconds_part1, i_seconds_part2);
-  int actual_local_seconds = i_concatinated_seconds;
+  uint8_t i_seconds_part1 = (uint8_t)seconds_part1 - 48;
+  uint8_t i_seconds_part2 = (uint8_t)seconds_part2 - 48;
+  uint8_t i_concatinated_seconds = concatinateTime(i_seconds_part1, i_seconds_part2);
+  uint8_t actual_local_seconds = i_concatinated_seconds;
 
   //-----------------------
   char year_part1 = array_year[0];
   char year_part2 = array_year[1];
-  int i_year_part1 = (int)year_part1 - 48;
-  int i_year_part2 = (int)year_part2 - 48;
-  int i_concatinated_year = concatinateTime(i_year_part1, i_year_part2);
-  int actual_local_year = i_concatinated_year;
+  uint8_t i_year_part1 = (uint8_t)year_part1 - 48;
+  uint8_t i_year_part2 = (uint8_t)year_part2 - 48;
+  uint8_t i_concatinated_year = concatinateTime(i_year_part1, i_year_part2);
+  uint8_t actual_local_year = i_concatinated_year;
 
   //-----------------------
   char month_part1 = array_month[0];
   char month_part2 = array_month[1];
-  int i_month_part1 = (int)month_part1 - 48;
-  int i_month_part2 = (int)month_part2 - 48;
-  int i_concatinated_month = concatinateTime(i_month_part1, i_month_part2);
-  int actual_local_month = i_concatinated_month;
+  uint8_t i_month_part1 = (uint8_t)month_part1 - 48;
+  uint8_t i_month_part2 = (uint8_t)month_part2 - 48;
+  uint8_t i_concatinated_month = concatinateTime(i_month_part1, i_month_part2);
+  uint8_t actual_local_month = i_concatinated_month;
 
   //-----------------------
   char day_part1 = array_day[0];
   char day_part2 = array_day[1];
-  int i_day_part1 = (int)day_part1 - 48;
-  int i_day_part2 = (int)day_part2 - 48;
-  int i_concatinated_day = concatinateTime(i_day_part1, i_day_part2);
-  int actual_local_day = i_concatinated_day;
+  uint8_t i_day_part1 = (uint8_t)day_part1 - 48;
+  uint8_t i_day_part2 = (uint8_t)day_part2 - 48;
+  uint8_t i_concatinated_day = concatinateTime(i_day_part1, i_day_part2);
+  uint8_t actual_local_day = i_concatinated_day;
 
   writeTime_Date2glob_Variables(actual_local_hours, actual_local_minutes, actual_local_seconds, actual_local_year, actual_local_month, actual_local_day);
 
@@ -227,6 +239,8 @@ void convertTime2Int() {
   }
 }
 
+//*********************************************************************************************
+// Debug-Feature
 void printGlobalTime() {
   Serial.println("------------------------------------------");
   Serial.printf("Year: %d\r\n", NETWORK_YEAR);
@@ -238,6 +252,8 @@ void printGlobalTime() {
   Serial.println("------------------------------------------");
 }
 
+//*********************************************************************************************
+// Main-function to read Network time from modem and make it avaible with global access  to store regular at rtc-module
 void getNetworkTime() {
   if (millis() - currentMillis >= interval)  //This is done every second
   {
