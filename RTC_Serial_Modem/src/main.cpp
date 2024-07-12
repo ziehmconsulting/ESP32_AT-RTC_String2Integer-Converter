@@ -29,9 +29,8 @@
 #include <Arduino.h>
 #include <iostream> // std::cout
 #include <string>   // std::string, std::stoi
-#include "features/NetworkTimeConverter.hpp"
 #include "features/global_variables.hpp"
-#include "features/rtcConfigurator.hpp"
+#include "features/updateRTCbyNetworkTime.hpp"
 
 using namespace std;
 
@@ -44,10 +43,6 @@ TaskHandle_t Task1;
 #define BAUD_RATE 9600 // Baud rate for ESP32 UART communication
 #define GSM_RESET 19
 #define GSM_ENABLE 18
-
-bool setRTCTime = false;
-bool gotNetworkTime = false;
-u_int8_t iterations = 10;
 
 void setSerials()
 {
@@ -99,36 +94,7 @@ void setup()
   */
 }
 
-int counter = 0;
 void loop()
 {
-  if (!gotNetworkTime)
-  {
-    for (;;)
-    {
-      getNetworkTime();
-
-      if (NETWORK_TIME_GLOBAL != false)
-      {
-        Serial.println("got time from Modem");
-        gotNetworkTime = true;
-        // goto label;
-        delay(1000);
-        break;
-      }
-    }
-  }
-
-  if (!setRTCTime)
-  {
-    adjustRTC_Time(NETWORK_HOUR, NETWORK_MINUTE, NETWORK_SECOND, NETWORK_YEAR, NETWORK_MONTH, NETWORK_DAY);
-    setRTCTime = true;
-  }
-
-  if (setRTCTime != false && gotNetworkTime != false)
-  {
-    delay(100);
-    getTimeRTC();
-    delay(1000);
-  }
+  updateRTCbyNetworkTime();
 }

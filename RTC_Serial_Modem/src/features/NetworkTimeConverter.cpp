@@ -234,7 +234,7 @@ void convertTime2Int() {
     Serial.println("***************************************************************");
     Serial.printf("Local Time: %d:%d:%d", actual_local_hours, actual_local_minutes, actual_local_seconds);
     Serial.println("");
-    Serial.printf("Local Date: %d:%d:%d", actual_local_year, actual_local_month, actual_local_day);
+    Serial.printf("Local Date: year: %d month: %d day: %d", actual_local_year, actual_local_month, actual_local_day);
     Serial.println("");
     Serial.println("***************************************************************");
   }
